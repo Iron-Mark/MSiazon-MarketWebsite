@@ -1,17 +1,17 @@
 // API Configuration and Utilities  
 // Auto-detect backend port or fallback to defaults
 const API_BASE_URL = (() => {
-    // Try different backend ports based on what's running
-    const possibleUrls = [
-        'http://localhost:8080/api',  // Production/Database server
-        'http://localhost:3001/api'   // Development/In-memory server
-    ];
+    // Check if we're running on EC2 or locally
+    const hostname = window.location.hostname;
 
-    // For now, use the database server port
-    return 'http://localhost:8080/api';
-})();
-
-class ApiClient {
+    if (hostname === 'localhost' || hostname === '127.0.0.1') {
+        // Local development
+        return 'http://localhost:8080/api';
+    } else {
+        // Production on EC2 - use the same hostname but port 8080
+        return `http://${hostname}:8080/api`;
+    }
+})(); class ApiClient {
     async get(endpoint) {
         try {
             const response = await fetch(`${API_BASE_URL}${endpoint}`);

@@ -10,7 +10,11 @@ const app = express();
 const port = process.env.PORT || 3001; // Different port from frontend
 
 // Middleware
-app.use(cors());
+app.use(cors({
+    origin: ['http://localhost:3000', 'http://localhost:8080', 'http://13.250.9.40', 'http://13.250.9.40:3000', 'http://13.250.9.40:8080'],
+    credentials: true,
+    optionsSuccessStatus: 200
+}));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
