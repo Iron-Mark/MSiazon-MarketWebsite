@@ -2,8 +2,8 @@ module.exports = {
     apps: [
         {
             name: 'macaroon-backend',
-            script: './backend/src/index.js',
-            cwd: '/home/ubuntu/MSiazon-MarketWebsite',
+            script: './backend/server.js',
+            cwd: '/home/ec2-user/MSiazon-MarketWebsite',
             instances: 1,
             exec_mode: 'fork',
             env_production: {
@@ -20,8 +20,8 @@ module.exports = {
         {
             name: 'macaroon-frontend',
             script: 'serve',
-            args: '-s frontend -l 3000',
-            cwd: '/home/ubuntu/MSiazon-MarketWebsite',
+            args: ['-s', 'frontend', '-l', '3000'],
+            cwd: '/home/ec2-user/MSiazon-MarketWebsite',
             instances: 1,
             exec_mode: 'fork',
             env_production: {
