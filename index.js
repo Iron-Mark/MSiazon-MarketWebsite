@@ -3,7 +3,7 @@ require('dotenv').config(); // Load environment variables from .env
 require("reflect-metadata");
 const express = require("express");
 const { DataSource, EntitySchema } = require("typeorm");
-const { Client } = require("pg");
+const mysql = require("mysql2/promise");
 const fs = require("fs");
 const path = require("path");
 
@@ -67,30 +67,7 @@ const OrderItemEntity = new EntitySchema({
   }
 });
 
-// Function to ensure the target database exists; if not, create it.
-async function ensureDatabaseExists() {
-  const targetDB = process.env.DB_NAME || "mikes_macaroon_market";
-  const dbConfig = {
-    host: process.env.DB_HOST || "localhost",
-    port: process.env.DB_PORT ? parseInt(process.env.DB_PORT) : 5432,
-    ssl: (process.env.DB_HOST && process.env.DB_HOST != 'localhost') ? { ca: fs.readFileSync('global-bundle.pem').toString() } : false,
-    user: process.env.DB_USER || "postgres",
-    password: process.env.DB_PASS || "postgres",
-    database: "postgres" // Connect to the default database
-  };
-
-  const client = new Client(dbConfig);
-  await client.connect();
-
-  const result = await client.query("SELECT 1 FROM pg_database WHERE datname = $1", [targetDB]);
-  if (result.rowCount === 0) {
-    await client.query(`CREATE DATABASE "${targetDB}"`);
-    console.log(`Database "${targetDB}" created.`);
-  } else {
-    console.log(`Database "${targetDB}" already exists.`);
-  }
-  await client.end();
-}
+// Note: Database creation is not needed for RDS MySQL - database already exists
 
 // Function to upload all files from the "static" folder to S3 using AWS SDK v3.
 function uploadStaticFilesToS3() {
@@ -156,15 +133,15 @@ function uploadStaticFilesToS3() {
   });
 }
 
-// Configure the data source for PostgreSQL using TypeORM
+// Configure the data source for MySQL using TypeORM
 const AppDataSource = new DataSource({
-  type: "postgres",
+  type: "mysql",
   host: process.env.DB_HOST || "localhost",
-  port: process.env.DB_PORT ? parseInt(process.env.DB_PORT) : 5432,
-  ssl: (process.env.DB_HOST && process.env.DB_HOST != 'localhost') ? { ca: fs.readFileSync('global-bundle.pem').toString() } : false,
-  username: process.env.DB_USER || "postgres",
-  password: process.env.DB_PASS || "postgres",
-  database: process.env.DB_NAME || "mikes_macaroon_market",
+  port: process.env.DB_PORT ? parseInt(process.env.DB_PORT) : 3306,
+  ssl: (process.env.DB_HOST && process.env.DB_HOST.includes('rds.amazonaws.com')) ? { ca: fs.readFileSync('global-bundle.pem').toString() } : false,
+  username: process.env.DB_USER || "root",
+  password: process.env.DB_PASS || "",
+  database: process.env.DB_NAME || "Mark Siazons_macaroon_market",
   synchronize: true, // Automatically syncs the schema (not recommended for production)
   logging: false,
   entities: [ProductEntity, OrderEntity, OrderItemEntity]
@@ -236,7 +213,7 @@ app.get("/", (req, res) => {
       ">
         <div class="d-flex h-100 align-items-center justify-content-center">
           <div class="text-center text-white">
-            <h1 class="display-3">Welcome to Mike's Macaroon Market!</h1>
+            <h1 class="display-3">Welcome to Mark Siazon's Macaroon Market!</h1>
             <p class="lead">Delicious macaroons made with love.</p>
             <a class="btn btn-primary btn-lg" href="/products" role="button">View Our Products</a>
           </div>
@@ -244,7 +221,7 @@ app.get("/", (req, res) => {
       </div>
     </div>
   `;
-  res.send(renderPage("Mike's Macaroon Market", content));
+  res.send(renderPage("Mark Siazon's Macaroon Market", content));
 });
 
 // Products route: List available products from the database with images.
@@ -341,7 +318,7 @@ app.get("/products", async (req, res) => {
         document.addEventListener('DOMContentLoaded', updateCartCount);
       </script>
     `;
-    res.send(renderPage("Products - Mike's Macaroon Market", html));
+    res.send(renderPage("Products - Mark Siazon's Macaroon Market", html));
   } catch (error) {
     console.error("Error fetching products:", error);
     res.status(500).send("Error fetching products");
@@ -375,7 +352,7 @@ app.get("/cart", (req, res) => {
       document.addEventListener('DOMContentLoaded', renderCart);
     </script>
   `;
-  res.send(renderPage("Your Cart - Mike's Macaroon Market", content));
+  res.send(renderPage("Your Cart - Mark Siazon's Macaroon Market", content));
 });
 
 // Checkout page: Show order form and populate cart details from sessionStorage.
@@ -430,7 +407,7 @@ app.get("/checkout", (req, res) => {
       document.addEventListener('DOMContentLoaded', renderCartSummary);
     </script>
   `;
-  res.send(renderPage("Checkout - Mike's Macaroon Market", content));
+  res.send(renderPage("Checkout - Mark Siazon's Macaroon Market", content));
 });
 
 // Process checkout: Save the order and order items to the database using submitted cart data.
@@ -443,7 +420,7 @@ app.post("/checkout", async (req, res) => {
     return res.status(400).send("Invalid cart data");
   }
   const total = cartItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
-  
+
   try {
     const orderRepository = AppDataSource.getRepository("Order");
     const order = {
@@ -471,16 +448,15 @@ app.post("/checkout", async (req, res) => {
         clearCart();
       </script>
     `;
-    res.send(renderPage("Order Confirmation - Mike's Macaroon Market", content));
+    res.send(renderPage("Order Confirmation - Mark Siazon's Macaroon Market", content));
   } catch (error) {
     console.error("Error processing order:", error);
     res.status(500).send("Error processing order");
   }
 });
 
-// Ensure the target database exists, upload static files to S3, then initialize TypeORM and start the server.
-ensureDatabaseExists()
-  .then(() => uploadStaticFilesToS3())
+// Upload static files to S3, then initialize TypeORM and start the server.
+uploadStaticFilesToS3()
   .then(() => AppDataSource.initialize())
   .then(async () => {
     console.log("Database connected.");

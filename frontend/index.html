@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+  <title>Mark Siazon's Macaroon Market</title>
+  <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <link rel="stylesheet" href="src/styles/main.css">
+</head>
+
+<body>
+  <div class="container">
+    <nav class="navbar navbar-expand-lg navbar-light bg-light fixed-top">
+      <div class="container">
+        <a class="navbar-brand" href="#" onclick="showPage('home')">
+          <strong>Mark Siazon's Macaroon Market</strong>
+        </a>
+        <div class="navbar-nav ml-auto">
+          <a class="nav-link" href="#" onclick="showPage('home')">Home</a>
+          <a class="nav-link" href="#" onclick="showPage('products')">Products</a>
+          <a class="nav-link" href="#" onclick="showPage('cart')" id="cartNavLink">
+            <i class="fas fa-shopping-cart"></i> Cart (<span id="navCartCount">0</span>)
+          </a>
+        </div>
+      </div>
+    </nav>
+
+    <!-- Page Content -->
+    <div id="pageContent" class="mt-4 pt-5">
+      <!-- Default loading content -->
+      <div class="text-center">
+        <div class="spinner-border text-primary mb-3" role="status">
+          <span class="sr-only">Loading...</span>
+        </div>
+        <p>Loading Mark Siazon's Macaroon Market...</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Loading Spinner -->
+  <div id="loadingSpinner" class="d-none">
+    <div class="spinner-border text-primary" role="status">
+      <span class="sr-only">Loading...</span>
+    </div>
+  </div>
+
+  <!-- Scripts -->
+  <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.1/dist/umd/popper.min.js"></script>
+  <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+  <script src="src/utils/api.js"></script>
+  <script src="src/utils/cart.js"></script>
+  <script src="src/components/HomePage.js"></script>
+  <script src="src/components/ProductsPage.js"></script>
+  <script src="src/components/CartPage.js"></script>
+  <script src="src/components/CheckoutPage.js"></script>
+  <script src="src/pages/app.js"></script>
+</body>
+
+</html>
