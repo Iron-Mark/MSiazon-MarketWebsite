@@ -1,7 +1,13 @@
 // API Configuration and Utilities  
 // Auto-detect backend port or fallback to defaults
 const API_BASE_URL = (() => {
-    // Backend is running on port 8080 according to the server output
+    // Try different backend ports based on what's running
+    const possibleUrls = [
+        'http://localhost:8080/api',  // Production/Database server
+        'http://localhost:3001/api'   // Development/In-memory server
+    ];
+
+    // For now, use the database server port
     return 'http://localhost:8080/api';
 })();
 

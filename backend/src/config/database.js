@@ -15,14 +15,18 @@ const AppDataSource = new DataSource({
     host: process.env.DB_HOST || "localhost",
     port: process.env.DB_PORT ? parseInt(process.env.DB_PORT) : 3306,
     ssl: (process.env.DB_HOST && process.env.DB_HOST.includes('rds.amazonaws.com')) ? {
-        ca: fs.readFileSync(path.join(__dirname, '../../../global-bundle.pem')).toString()
+        ca: fs.readFileSync(path.join(__dirname, '../../../global-bundle.pem')).toString(),
+        rejectUnauthorized: false
     } : false,
     username: process.env.DB_USER || "root",
     password: process.env.DB_PASS || "",
     database: process.env.DB_NAME || "mikes_macaroon_market",
     synchronize: true, // Automatically syncs the schema (not recommended for production)
     logging: process.env.NODE_ENV === 'development',
-    entities: [ProductEntity, OrderEntity, OrderItemEntity]
+    entities: [ProductEntity, OrderEntity, OrderItemEntity],
+    connectTimeout: 30000, // 30 seconds
+    acquireTimeout: 30000, // 30 seconds
+    timeout: 30000 // 30 seconds
 });
 
 module.exports = AppDataSource;

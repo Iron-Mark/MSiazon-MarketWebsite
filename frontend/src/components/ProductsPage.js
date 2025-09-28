@@ -6,18 +6,32 @@ class ProductsPage {
 
     async loadProducts() {
         try {
+            console.log('🔍 Loading products from API...');
             showLoading();
-            const response = await apiClient.get('/products');
 
-            if (response.success) {
-                this.products = response.data;
+            const response = await apiClient.get('/products');
+            console.log('📡 API Response:', response);
+
+            if (response && response.success) {
+                this.products = response.data || [];
+                console.log('✅ Products loaded:', this.products.length);
+                return this.products;
+            } else if (response && Array.isArray(response)) {
+                // Handle direct array response (some APIs return array directly)
+                this.products = response;
+                console.log('✅ Products loaded (direct array):', this.products.length);
                 return this.products;
             } else {
-                throw new Error(response.message || 'Failed to load products');
+                throw new Error(response?.message || 'Failed to load products');
             }
         } catch (error) {
-            console.error('Error loading products:', error);
-            showAlert('Failed to load products. Please try again.', 'danger');
+            console.error('❌ Error loading products:', error);
+            console.error('🔍 Error details:', {
+                message: error.message,
+                stack: error.stack,
+                name: error.name
+            });
+            showAlert(`Failed to load products: ${error.message}. Please check console for details.`, 'danger');
             return [];
         } finally {
             hideLoading();

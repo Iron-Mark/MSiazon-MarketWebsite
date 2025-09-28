@@ -38,16 +38,46 @@ app.use('*', (req, res) => {
 // Initialize services and start server
 async function startServer() {
     try {
-        // Upload static files to S3
-        const s3Service = new S3Service();
-        await s3Service.uploadStaticFilesToS3();
-        console.log('✅ S3 upload completed');
+        console.log('🚀 Starting Mark Siazon\'s Macaroon Market Backend...');
 
-        // Initialize database connection
-        await AppDataSource.initialize();
-        console.log('✅ Database connected');
+        // Upload static files to S3 (optional, continue on error)
+        try {
+            const s3Service = new S3Service();
+            await s3Service.uploadStaticFilesToS3();
+            console.log('✅ S3 upload completed');
+        } catch (s3Error) {
+            console.warn('⚠️ S3 upload failed, continuing without S3:', s3Error.message);
+        }
 
-        // Seed default products
+        // Initialize database connection with retry logic and fallback
+        let databaseConnected = false;
+        let retryCount = 0;
+        const maxRetries = 2; // Reduced retries for faster fallback
+
+        while (retryCount < maxRetries && !databaseConnected) {
+            try {
+                console.log(`📡 Attempting database connection (attempt ${retryCount + 1}/${maxRetries})...`);
+                await AppDataSource.initialize();
+                console.log('✅ Database connected successfully');
+                databaseConnected = true;
+                break;
+            } catch (dbError) {
+                retryCount++;
+                console.error(`❌ Database connection failed (attempt ${retryCount}):`, dbError.message);
+
+                if (retryCount >= maxRetries) {
+                    console.warn('⚠️ Database connection failed after all retries, falling back to in-memory storage');
+                    console.log('📝 Note: Data will not be persisted between server restarts');
+                    break;
+                }
+
+                // Wait before retry (shorter wait)
+                console.log('⏳ Waiting 3 seconds before retry...');
+                await new Promise(resolve => setTimeout(resolve, 3000));
+            }
+        }
+
+        // Initialize services (works with or without database)
         const productService = new ProductService();
         productService.initialize();
         await productService.seedDefaultProducts();
