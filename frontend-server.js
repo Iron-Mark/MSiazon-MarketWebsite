@@ -3,10 +3,14 @@
  * Serves files from ./frontend on PORT (default 3000) and supports a SPA fallback to index.html.
  */
 const http = require('http');
+const { request: httpRequest } = require('http');
 const path = require('path');
 const fs = require('fs');
 
 const PORT = parseInt(process.env.FRONTEND_PORT || '3000', 10);
+// Where to send /api requests (backend). Default assumes unified single instance.
+// Use 127.0.0.1 to avoid DNS and public networking.
+const BACKEND_ORIGIN = process.env.BACKEND_ORIGIN || 'http://127.0.0.1:8080';
 const ROOT = path.join(__dirname, 'frontend');
 
 const MIME = {
@@ -47,6 +51,43 @@ function serveFile(filePath, res) {
 }
 
 const server = http.createServer((req, res) => {
+    // Simple proxy for /api/* to backend (necessary if frontend served on different port than backend)
+    if (req.url.startsWith('/api/')) {
+        try {
+            const backendUrl = new URL(req.url, BACKEND_ORIGIN);
+            const proxyOptions = {
+                hostname: backendUrl.hostname,
+                port: backendUrl.port,
+                path: backendUrl.pathname + backendUrl.search,
+                method: req.method,
+                headers: {
+                    ...req.headers,
+                    host: backendUrl.host
+                }
+            };
+            const proxyReq = httpRequest(proxyOptions, proxyRes => {
+                const headers = { ...proxyRes.headers };
+                // Remove hop-by-hop headers
+                delete headers['content-length'];
+                delete headers['transfer-encoding'];
+                res.writeHead(proxyRes.statusCode || 500, headers);
+                proxyRes.pipe(res);
+            });
+            proxyReq.on('error', err => {
+                console.error('API proxy error:', err.message);
+                send(res, 502, 'Bad Gateway');
+            });
+            if (req.method !== 'GET' && req.method !== 'HEAD') {
+                req.pipe(proxyReq);
+            } else {
+                proxyReq.end();
+            }
+            return; // handled
+        } catch (e) {
+            console.error('API proxy setup error:', e.message);
+            return send(res, 500, 'Proxy error');
+        }
+    }
     const urlPath = decodeURI(req.url.split('?')[0]);
     let rel = urlPath === '/' ? '/index.html' : urlPath;
     let filePath = safeJoin(ROOT, rel);
