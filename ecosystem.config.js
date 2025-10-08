@@ -19,14 +19,15 @@ module.exports = {
         },
         {
             name: 'macaroon-frontend',
-            // Use serve with explicit --listen to avoid accidental fallback to privileged port 80
-            script: 'serve',
-            args: ['-s', 'frontend', '--listen', '3000', '--no-clipboard', '--single'],
+            // Custom lightweight static server (frontend-server.js) avoids serve CLI arg parsing issues.
+            script: 'node',
+            args: ['frontend-server.js'],
             cwd: '/home/ec2-user/MSiazon-MarketWebsite',
             instances: 1,
             exec_mode: 'fork',
             env_production: {
-                NODE_ENV: 'production'
+                NODE_ENV: 'production',
+                FRONTEND_PORT: 3000
             },
             error_file: './logs/frontend-error.log',
             out_file: './logs/frontend-out.log',
