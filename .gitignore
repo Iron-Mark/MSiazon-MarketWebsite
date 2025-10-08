@@ -130,3 +130,4 @@ dist
 .pnp.*
 .env.production
 .env.local.example
+*.pem
