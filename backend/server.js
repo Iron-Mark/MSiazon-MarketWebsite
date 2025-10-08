@@ -10,23 +10,19 @@ const AppDataSource = require('./src/config/database');
 const S3Service = require('./src/services/S3Service');
 const ProductService = require('./src/services/ProductService');
 const apiRoutes = require('./src/routes');
+const fs = require('fs');
 
 const app = express();
 const port = process.env.PORT || 3001; // Different port from frontend
 
 // Middleware (dynamic CORS)
 app.use(express.json());
-// Dynamic CORS handling: allow list can be extended via CORS_ORIGINS env (comma separated)
-// Existing static origins + current public IP. Remove old IPs once you switch to a domain.
+// Dynamic CORS handling: No hard-coded public IPs so an Elastic IP or domain change does not require code edits.
+// Provide a comma-separated list in CORS_ORIGINS (e.g. https://app.example.com,https://admin.example.com)
+// For local development localhost origins are always allowed.
 const defaultAllowedOrigins = [
     'http://localhost:3000',
-    'http://localhost:8080',
-    'http://13.250.9.40',
-    'http://13.250.9.40:3000',
-    'http://13.250.9.40:8080',
-    'http://54.169.187.175',
-    'http://54.169.187.175:3000',
-    'http://54.169.187.175:8080'
+    'http://localhost:8080'
 ];
 
 let extraOrigins = [];
@@ -38,13 +34,15 @@ if (process.env.CORS_ORIGINS) {
 }
 const allowedOrigins = [...new Set([...defaultAllowedOrigins, ...extraOrigins])];
 
+// Optional: allow any origin (NOT recommended for production) by setting CORS_ALLOW_ALL=true
+const allowAll = (process.env.CORS_ALLOW_ALL || '').toLowerCase() === 'true';
+
 app.use(cors({
     origin: function (origin, callback) {
+        if (allowAll) return callback(null, true);
         // Allow non-browser tools (no origin) and any whitelisted origin
-        if (!origin || allowedOrigins.includes(origin)) {
-            return callback(null, true);
-        }
-        console.warn('Blocked by CORS origin:', origin);
+        if (!origin || allowedOrigins.includes(origin)) return callback(null, true);
+        console.warn('[CORS] Blocked origin:', origin);
         return callback(new Error('Not allowed by CORS'));
     },
     credentials: true,
@@ -53,6 +51,27 @@ app.use(cors({
 
 // API Routes
 app.use('/api', apiRoutes);
+
+// Optional: serve frontend from the same backend process (set SERVE_FRONTEND=false to disable)
+if ((process.env.SERVE_FRONTEND || 'true').toLowerCase() !== 'false') {
+    const frontendDir = path.join(__dirname, '..', 'frontend');
+    if (fs.existsSync(frontendDir)) {
+        console.log('[Frontend] Serving static files from', frontendDir);
+        app.use(express.static(frontendDir));
+
+        // SPA fallback: for non-API routes that do not map to a file, return index.html
+        app.get(["/products", "/cart", "/checkout", "/home", "/"], (req, res, next) => {
+            // If a file actually exists for the path, let static middleware handle it
+            const requested = path.join(frontendDir, req.path);
+            if (fs.existsSync(requested) && fs.statSync(requested).isFile()) return next();
+            const indexFile = path.join(frontendDir, 'index.html');
+            if (fs.existsSync(indexFile)) return res.sendFile(indexFile);
+            return next();
+        });
+    } else {
+        console.warn('[Frontend] Frontend directory not found; skipping static serving');
+    }
+}
 
 // Convenience: /api root summary
 app.get('/api', (req, res) => {
@@ -66,8 +85,8 @@ app.get('/api', (req, res) => {
     });
 });
 
-// Root info endpoint (helps when user hits base URL and previously saw 404)
-app.get('/', (req, res) => {
+// Root info JSON (under /_info to avoid colliding with frontend index)
+app.get('/_info', (req, res) => {
     res.json({
         success: true,
         message: "Macaroon Market API",

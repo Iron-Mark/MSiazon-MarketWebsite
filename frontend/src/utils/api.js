@@ -1,17 +1,10 @@
-// API Configuration and Utilities  
-// Auto-detect backend port or fallback to defaults
-const API_BASE_URL = (() => {
-    // Check if we're running on EC2 or locally
-    const hostname = window.location.hostname;
+// API Configuration and Utilities
+// Using a relative base so frontend + backend served on same origin (no CORS required)
+// Backend now serves the frontend and exposes /api under the same PORT (default 8080)
+// If you ever re-separate the frontend, you can override via window.API_BASE_URL before this script loads.
+const API_BASE_URL = (window.API_BASE_URL || '/api');
 
-    if (hostname === 'localhost' || hostname === '127.0.0.1') {
-        // Local development
-        return 'http://localhost:8080/api';
-    } else {
-        // Production on EC2 - use the same hostname but port 8080
-        return `http://${hostname}:8080/api`;
-    }
-})(); class ApiClient {
+class ApiClient {
     async get(endpoint) {
         try {
             const response = await fetch(`${API_BASE_URL}${endpoint}`);
