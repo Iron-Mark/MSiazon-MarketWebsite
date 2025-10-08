@@ -14,15 +14,10 @@ const apiRoutes = require('./src/routes');
 const app = express();
 const port = process.env.PORT || 3001; // Different port from frontend
 
-// Middleware
-app.use(cors({
-    origin: ['http://localhost:3000', 'http://localhost:8080', 'http://13.250.9.40', 'http://13.250.9.40:3000', 'http://13.250.9.40:8080', 'http://54.169.187.175.40:3000', 'http://54.169.187.175.40:8080'],
-    credentials: true,
-    optionsSuccessStatus: 200
-}));
+// Middleware (dynamic CORS)
 app.use(express.json());
 // Dynamic CORS handling: allow list can be extended via CORS_ORIGINS env (comma separated)
-// Existing static origins retained + new public IP (update automatically if you attach an Elastic IP or domain)
+// Existing static origins + current public IP. Remove old IPs once you switch to a domain.
 const defaultAllowedOrigins = [
     'http://localhost:3000',
     'http://localhost:8080',
@@ -58,6 +53,31 @@ app.use(cors({
 
 // API Routes
 app.use('/api', apiRoutes);
+
+// Convenience: /api root summary
+app.get('/api', (req, res) => {
+    res.json({
+        success: true,
+        endpoints: {
+            health: '/api/health',
+            products: '/api/products',
+            orders: '/api/orders'
+        }
+    });
+});
+
+// Root info endpoint (helps when user hits base URL and previously saw 404)
+app.get('/', (req, res) => {
+    res.json({
+        success: true,
+        message: "Macaroon Market API",
+        health: "/api/health",
+        products: "/api/products",
+        orders: "/api/orders",
+        docs: "Add documentation link or README URL here",
+        version: process.env.npm_package_version || '1.0.0'
+    });
+});
 
 // Global error handler
 app.use((error, req, res, next) => {
