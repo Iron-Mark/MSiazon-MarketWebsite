@@ -20,7 +20,7 @@ const AppDataSource = new DataSource({
     } : false,
     username: process.env.DB_USER || "root",
     password: process.env.DB_PASS || "",
-    database: process.env.DB_NAME || "mikes_macaroon_market",
+    database: process.env.DB_NAME || "msiazon-web",
     synchronize: true, // Automatically syncs the schema (not recommended for production)
     logging: process.env.NODE_ENV === 'development',
     entities: [ProductEntity, OrderEntity, OrderItemEntity],

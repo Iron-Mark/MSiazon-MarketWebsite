@@ -155,7 +155,7 @@ DB_HOST=your-rds-endpoint
 DB_PORT=3306
 DB_USER=admin
 DB_PASS=your-password
-DB_NAME=mikes_macaroon_market
+DB_NAME=msiazon-web
 
 # AWS S3
 S3_BUCKET=msiazon-assets
