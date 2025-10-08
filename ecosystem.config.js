@@ -19,8 +19,9 @@ module.exports = {
         },
         {
             name: 'macaroon-frontend',
+            // Use serve with explicit --listen to avoid accidental fallback to privileged port 80
             script: 'serve',
-            args: ['-s', 'frontend', '-l', '3000'],
+            args: ['-s', 'frontend', '--listen', '3000', '--no-clipboard', '--single'],
             cwd: '/home/ec2-user/MSiazon-MarketWebsite',
             instances: 1,
             exec_mode: 'fork',
